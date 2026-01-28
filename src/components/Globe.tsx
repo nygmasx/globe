@@ -183,26 +183,35 @@ export default function Globe() {
           .hexPolygonUseDots(true)
           .hexPolygonAltitude(0.01);
 
+        // Utiliser des éléments HTML pour des marqueurs carrés
         globe
-          .pointsData(markers)
-          .pointLat('lat')
-          .pointLng('lng')
-          .pointAltitude(0.02)
-          .pointRadius(0.6)
-          .pointsMerge(false);
+          .htmlElementsData(markers)
+          .htmlLat('lat')
+          .htmlLng('lng')
+          .htmlAltitude(0.02)
+          .htmlElement((d: object) => {
+            const marker = d as MarkerData;
+            const el = document.createElement('div');
+            const isActive = marker.zone === 'europe'; // Initial state
 
-        globe
-          .ringsData(markers)
-          .ringLat('lat')
-          .ringLng('lng')
-          .ringMaxRadius(1.2)
-          .ringPropagationSpeed(0)
-          .ringRepeatPeriod(0);
+            el.style.width = '14px';
+            el.style.height = '14px';
+            el.style.backgroundColor = isActive ? '#FFECE8' : '#000000';
+            el.style.border = isActive ? '2px solid #000000' : '2px solid #FFFFFF';
+            el.style.cursor = 'pointer';
+            el.style.boxSizing = 'border-box';
+            el.style.pointerEvents = 'auto';
+            el.style.zIndex = '1000';
+            el.dataset.zone = marker.zone;
 
-        globe.onPointClick((point: object) => {
-          const marker = point as MarkerData;
-          setActiveZone(prev => prev === marker.zone ? null : marker.zone);
-        });
+            el.addEventListener('click', (e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setActiveZone(prev => prev === marker.zone ? null : marker.zone);
+            });
+
+            return el;
+          });
 
         globe.onHexPolygonClick((polygon: object) => {
           const feature = polygon as CountryFeature;
@@ -251,14 +260,29 @@ export default function Globe() {
       return 'rgba(255, 255, 255, 0.7)';
     });
 
-    globe.pointColor((d: object) => {
+    // Mettre à jour les marqueurs HTML carrés
+    globe.htmlElement((d: object) => {
       const marker = d as MarkerData;
-      return marker.zone === activeZone ? '#FFECE8' : '#000000';
-    });
+      const el = document.createElement('div');
+      const isActive = marker.zone === activeZone;
 
-    globe.ringColor((d: object) => () => {
-      const marker = d as MarkerData;
-      return marker.zone === activeZone ? '#000000' : '#FFFFFF';
+      el.style.width = '14px';
+      el.style.height = '14px';
+      el.style.backgroundColor = isActive ? '#FFECE8' : '#000000';
+      el.style.border = isActive ? '2px solid #000000' : '2px solid #FFFFFF';
+      el.style.cursor = 'pointer';
+      el.style.boxSizing = 'border-box';
+      el.style.pointerEvents = 'auto';
+      el.style.zIndex = '1000';
+      el.dataset.zone = marker.zone;
+
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        setActiveZone(prev => prev === marker.zone ? null : marker.zone);
+      });
+
+      return el;
     });
 
   }, [activeZone, isCountryInActiveZone]);
