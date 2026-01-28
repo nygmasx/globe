@@ -134,7 +134,8 @@ interface CountryFeature {
 
 export default function Globe() {
   const containerRef = useRef<HTMLDivElement>(null);
-  const globeRef = useRef<ReturnType<typeof GlobeGL> | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const globeRef = useRef<any>(null);
   const [activeZone, setActiveZone] = useState<string | null>('europe');
 
   const isCountryInActiveZone = useCallback((countryName: string) => {
@@ -162,7 +163,7 @@ export default function Globe() {
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const globe = GlobeGL()(containerRef.current)
+    const globe = new GlobeGL(containerRef.current)
       .backgroundColor('#000000')
       .showAtmosphere(false)
       .showGlobe(true)
