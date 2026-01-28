@@ -118,6 +118,37 @@ const getZoneForCountry = (countryName: string): string | null => {
   return null;
 };
 
+// Fonction pour vérifier si un point est dans un polygone (ray casting)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const isPointInCountry = (lat: number, lng: number, geometry: any): boolean => {
+  const point = [lng, lat];
+
+  const isPointInPolygon = (point: number[], polygon: number[][]) => {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const xi = polygon[i][0], yi = polygon[i][1];
+      const xj = polygon[j][0], yj = polygon[j][1];
+
+      if (((yi > point[1]) !== (yj > point[1])) &&
+          (point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi)) {
+        inside = !inside;
+      }
+    }
+    return inside;
+  };
+
+  if (geometry.type === 'Polygon') {
+    return isPointInPolygon(point, geometry.coordinates[0]);
+  } else if (geometry.type === 'MultiPolygon') {
+    for (const polygon of geometry.coordinates) {
+      if (isPointInPolygon(point, polygon[0])) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
 interface MarkerData {
   lat: number;
   lng: number;
@@ -219,6 +250,24 @@ export default function Globe() {
           const zone = getZoneForCountry(countryName);
           if (zone) {
             setActiveZone(prev => prev === zone ? null : zone);
+          }
+        });
+
+        // Rendre les hexagones plus faciles à cliquer en augmentant leur zone de hit
+        globe.onGlobeClick(({ lat, lng }: { lat: number; lng: number }) => {
+          // Trouver le pays le plus proche de ce point
+          const countriesData = countries.features;
+          for (const country of countriesData) {
+            const countryName = country.properties?.ADMIN || '';
+            const zone = getZoneForCountry(countryName);
+            if (zone) {
+              // Vérifier si le point est dans ce pays (approximatif via bounding box)
+              const geometry = country.geometry;
+              if (geometry && isPointInCountry(lat, lng, geometry)) {
+                setActiveZone(prev => prev === zone ? null : zone);
+                return;
+              }
+            }
           }
         });
       });
